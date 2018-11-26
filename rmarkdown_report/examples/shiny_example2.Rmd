@@ -1,0 +1,12 @@
+---
+title: ""
+runtime: shiny
+output: html_document
+---
+
+```{r,echo=FALSE}
+shinyAppDir(
+  "myapp",
+  options = list(width = "100%", height = 800)
+)
+```

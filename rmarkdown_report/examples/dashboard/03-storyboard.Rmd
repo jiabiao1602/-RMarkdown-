@@ -1,0 +1,36 @@
+---
+title: "Storyboard Commentary"
+output: 
+  flexdashboard::flex_dashboard:
+    storyboard: true
+---
+
+### recharts包演示
+
+```{r}
+library(recharts)
+g <- echartr(iris, Sepal.Width, Petal.Width, series =Species) %>%
+  setSeries(symbolSize=8) %>%
+  setSymbols(c('heart', 'arrow','diamond')) %>%
+  setToolbox(show=FALSE)
+g
+```
+
+---
+
+recharts是一个用于可视化的R加载包，它提供了一套面向JavaScript库ECharts2的接口。此包的目的是让R用户即便不精通HTML或JavaScript，也能用很少的代码做出Echarts交互图
+
+### scatterD3包包演示
+
+```{r}
+if(!require(scatterD3)) install.packages("scatterD3")
+mtcars$names <- rownames(mtcars)
+scatterD3(data = mtcars, x = wt, y = mpg, lab = names,
+          col_var = cyl, symbol_var = am,
+          xlab = "Weight", ylab = "Mpg", col_lab = "Cylinders",
+          symbol_lab = "Manual transmission")
+```
+
+---
+
+scatterD3是一个用于交互式散点图可视化的HTML R窗口小部件。 它基于htmlwidgets R包和d3.js javascript库。

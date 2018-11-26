@@ -1,0 +1,204 @@
+---
+title: "Data Visualization"
+author: "谢佳标"
+date: "2018/11/24"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    social: menu
+    source_code: embed
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+library(gcookbook)
+library(ggplot2)
+library(lattice)
+library(plotly)
+library(rbokeh)
+library(scatterD3)
+library(arules)
+library(arulesViz)
+library(igraph)
+```
+
+Column {.sidebar}
+=====================================================================
+Shiny是R中的一种Web开发框架，使得R的使用者不必太了解CSS、JS，只需要了解一些HTML的知识就可以快速完成Web开发，且Shiny包集成了Bootstrap、jQuery、Ajax等特性，极大解放了作为统计语言的R的生产力。
+
+
+
+静态图可视化
+======================================================================
+
+column
+-----------------------------------------------------------------------
+### ggplot2
+```{r}
+csub <- subset(climate,Source=="Berkeley" & Year >= 1900)
+csub$pos <- csub$Anomaly10y >=0
+
+ggplot(csub,aes(x=Year,y=Anomaly10y,fill=pos)) +
+  geom_bar(stat="identity",position="identity")  +
+  guides(fill=guide_legend(reverse = TRUE)) 
+
+```
+
+column
+-----------------------------------------------------------------------
+
+### lattice
+```{r}
+mygraph <- barchart(Class~Freq|Sex+Age,data=as.data.frame(Titanic),
+                    groups=Survived,stack=TRUE,layout=c(4,1),
+                    auto.key=list(title="Survived",columns=2),
+                    scales=list(x="free"))
+update(mygraph,
+       panel=function(...){
+           panel.grid(h=0,v=-1)
+           panel.barchart(...,border="transparent")
+       })
+```
+
+
+交互可视化
+======================================================================
+
+Row
+-----------------------------------------------------------------------
+
+### plotly
+```{r}
+data("economics",package = "ggplot2")
+p <- plot_ly(economics,x=~date,y=~uempmed,name="uempmed",type="scatter",mode="lines") %>%
+add_trace(y=~psavert,name="psavert",line=list(color="rgb(205,12,24)",dash="dash"))
+p
+
+```
+
+Row
+-------------------------------------------------------------------------
+
+### rbokeh 
+```{r}
+h <- figure(width = 600, height = 400) %>%
+  ly_hist(eruptions, data = faithful, breaks = 40, freq = FALSE) %>%
+  ly_density(eruptions, data = faithful)
+h
+```
+
+### scatterD3
+```{r}
+mtcars$names <- rownames(mtcars)
+scatterD3(data = mtcars, x = wt, y = mpg, lab = names,
+          col_var = cyl, symbol_var = am,
+          xlab = "Weight", ylab = "Mpg", col_lab = "Cylinders",
+          symbol_lab = "Manual transmission")
+
+```
+
+模型结果可视化
+======================================================================
+
+Row
+-----------------------------------------------------------------------
+
+### 关联规则可视化
+
+```{r}
+selectInput(inputId="method",label="请选择关联规则可视化的method",
+            choices=c("graph","scatterplot","two-key plot", "matrix",  
+                      "matrix3D","paracoord"))
+```
+
+```{r}
+renderPlot({
+    data(Groceries)
+    groceryrules <- apriori(Groceries,parameter = 
+                              list(support=0.006,confidence=0.25,minlen=2))
+    plot(subset(groceryrules,lift > 3),method=input$method)
+  })
+```
+
+Row
+-----------------------------------------------------------------------
+
+### 聚类结果可视化
+
+```{r}
+numericInput('clusters', '请选择k值', 3,
+              min = 1, max = 9)
+```
+
+```{r}
+renderPlot({
+  plot(iris[,c('Sepal.Length','Sepal.Width')],
+       col = kmeans(iris[,1:4],input$clusters)$cluster,
+       pch = 20, cex = 2)
+  points(kmeans(iris[,1:4],input$clusters)$centers, pch = 4, cex = 2, lwd = 4)
+  })
+```
+
+社会网络可视化
+======================================================================
+
+Row
+--------------------------------------------------------------------
+### Plot Layout
+```{r}
+wellPanel(
+  radioButtons(inputId="PlotLayout", label="Plot Layout",
+  choices=c("Auto","Random","Circle","Sphere","Fruchterman Reingold",
+            "Kamada Kawai","Drl","Spring","Reingold Tilford",
+            "Fruchterma Reingold Grid","Lgl","Graphout","SVD"), selected="Auto"))
+```
+
+### Show Vertex Label
+
+```{r}
+wellPanel(
+  checkboxInput(inputId = "showNodeName",
+                label = "Show Vertex Label",  value = TRUE),
+  sliderInput(inputId = "vertexSize", 
+              label = "Vertex Size",  value = 15, min=1, max=100))
+```
+
+Row
+--------------------------------------------------------------------
+
+### Social network
+
+```{r}
+plotGraph <- function(){
+  g <- make_graph( ~ A-B-C-D-A, E-A:B:C:D,
+                   F-G-H-I-F, J-F:G:H:I,
+                   K-L-M-N-K, O-K:L:M:N,
+                   P-Q-R-S-P, T-P:Q:R:S,
+                   B-F, E-J, C-I, L-T, O-T, M-S,
+                   C-P, C-L, I-L, I-P)
+  plotlayout <- switch(input$PlotLayout,
+                       "Auto"=layout.auto(g),
+                       "Random"=layout.random(g),
+                       "Circle"=layout.circle(g),
+                       "Sphere"=layout.sphere(g),
+                       "Fruchterman Reingold"=layout.fruchterman.reingold(g),
+                       "Kamada Kawai"=layout.kamada.kawai(g),
+                       "Drl"=layout.drl(g),
+                       "Spring"=layout.spring(g),
+                       "Reingold Tilford"=layout.reingold.tilford(g),
+                       "Fruchterma Reingold Grid"=layout.fruchterman.reingold.grid(g),
+                       "Lgl"=layout.lgl(g),
+                       "Graphopt"=layout.graphopt(g),
+                       "SVD"=layout.svd(g)
+  )
+  if(!input$showNodeName){
+    V(g)$label = ""
+  }
+  V(g)$size = input$vertexSize
+  plot(g, layout=plotlayout)
+}
+renderPlot({
+	plotGraph()
+})
+```
+

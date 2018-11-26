@@ -1,0 +1,47 @@
+---
+title: "Multiple Pages"
+output: flexdashboard::flex_dashboard
+---
+
+数据可视化 {data-icon="fa-signal"}
+===================================== 
+
+### 普通箱线图
+    
+```{r}
+library(ggplot2)
+ggplot(iris,aes(x=Species,y=Sepal.Length,fill=Species))+
+    geom_boxplot()+
+    theme(legend.position="none")
+```
+
+
+### 交互箱线图
+
+```{r,message=FALSE,warning=FALSE}
+library(plotly)
+plot_ly(midwest, x = ~percollege, color = ~state, type = "box")
+```
+   
+
+Tables {data-icon="fa-table"}
+=====================================     
+
+Table1
+---------------
+
+### iris
+    
+```{r}
+DT::datatable(iris)
+```
+  
+Table2
+---------------
+
+### midwest
+
+```{r}
+library(plotly)
+DT::datatable(midwest)
+```
